@@ -1,13 +1,26 @@
 import functions from "firebase-functions";
-import express, { response } from "express";
+import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import mySecretKey from "./secret.js";
 
 const users = [
-  { id: 1, email: "todd@bocacode.com", password: "abc123" },
-  { id: 1, email: "damian@bocacode.com", password: "def456" },
-  { id: 1, email: "vitoria@bocacode.com", password: "ghi789" },
+  // fake database
+  {
+    id: 1,
+    email: "todd@bocacode.com",
+    password: "$2b$10$GZb4nxa5BOkMD0hJglUOnufBCMH2z5vwmO8N.zZdQ.FDKReKHVeSy",
+  },
+  {
+    id: 2,
+    email: "damian@bocacode.com",
+    password: "$2b$10$GZb4nxa5BOkMD0hJglUOnu3WFYOpIgEsrecgmDyrRU2ebxBjADtuK",
+  },
+  {
+    id: 3,
+    email: "vitoria@bocacode.com",
+    password: "$2b$10$GZb4nxa5BOkMD0hJglUOnu8AkYGjPBIb7IVI1d9FKlcylgpsNTLhi",
+  },
 ];
 
 const app = express();
@@ -16,7 +29,7 @@ app.use(express.json());
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  // check to see if that email and password exist in oudb
+  // check to see if that email and password exist in our db
   // if they do, create and send back a token
   // if they don't, send back an error message
   let user = users.find(
@@ -32,9 +45,9 @@ app.post("/login", (req, res) => {
   res.send({ token });
 });
 
-app.get("/public", (req, res) => {});
-app.post("/private", (req, res) => {});
-app.post("/welcome", (req, res) => {});
+app.get("/public", (req, res) => {
+  res.send({ message: "Welcome!" }); // anyone can see this...
+});
 
 app.get("/private", (req, res) => {
   // let's require a valid token to see this
@@ -45,20 +58,17 @@ app.get("/private", (req, res) => {
   }
   jwt.verify(token, mySecretKey, (err, decoded) => {
     if (err) {
-      res.status(401).send({ error: "You must be logged in to see this" });
+      res
+        .status(401)
+        .send({ error: "You must use a valid token to see this" + err });
       return;
     }
     // here we know that the token is valid...
-    res.send(`Welcome ${decoded.email}!`);
+
+    // we can check and see if decoded.id for example is the user that
+    // can update this record in the database...
+    res.send({ message: `Welcome ${decoded.email}!` });
   });
 });
 
-export const api = functions.https.onRequest(app);
-
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+export const myApi = functions.https.onRequest(app);
